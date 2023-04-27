@@ -1800,13 +1800,13 @@ sensor_msgs::Imu HpPosRecProduct::getImuMsgFromRadian(float radian)
   imu.angular_velocity_covariance[0] = -1;
   tf::Quaternion orientation;
   orientation.setRPY(0, 0, radian);
-  imu_east_heading_.orientation.x = orientation[0];
-  imu_east_heading_.orientation.y = orientation[1];
-  imu_east_heading_.orientation.z = orientation[2];
-  imu_east_heading_.orientation.w = orientation[3];
-  imu_east_heading_.orientation_covariance[0] = 1000.0;
-  imu_east_heading_.orientation_covariance[4] = 1000.0;
-  imu_east_heading_.orientation_covariance[8] = 1000.0;
+  imu.orientation.x = orientation[0];
+  imu.orientation.y = orientation[1];
+  imu.orientation.z = orientation[2];
+  imu.orientation.w = orientation[3];
+  imu.orientation_covariance[0] = 1000.0;
+  imu.orientation_covariance[4] = 1000.0;
+  imu.orientation_covariance[8] = 1000.0;
   return imu;
 
 }
