@@ -51,6 +51,7 @@
 #include <sensor_msgs/TimeReference.h>
 #include <sensor_msgs/Imu.h>
 #include <nmea_msgs/Sentence.h>
+#include <std_msgs/Float64.h>
 // Other U-Blox package includes
 #include <ublox_msgs/ublox_msgs.h>
 // Ublox GPS includes
@@ -1373,6 +1374,9 @@ class HpPosRecProduct: public virtual HpgRefProduct {
   void callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED9 &m);
 
   sensor_msgs::Imu imu_;
+  sensor_msgs::Imu getImuMsgFromRadian(float radian);
+  sensor_msgs::Imu imu_north_heading_;
+  sensor_msgs::Imu imu_east_heading_;
 
   //! Last relative position (used for diagnostic updater)
   ublox_msgs::NavRELPOSNED9 last_rel_pos_;

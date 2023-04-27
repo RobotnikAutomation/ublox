@@ -1789,6 +1789,28 @@ void HpPosRecProduct::callbackNavHpPosLlh(const ublox_msgs::NavHPPOSLLH& m) {
   }
 }
 
+sensor_msgs::Imu HpPosRecProduct::getImuMsgFromRadian(float radian)
+{
+  sensor_msgs::Imu imu;
+
+  imu.header.stamp = ros::Time::now();
+  imu.header.frame_id = frame_id;
+
+  imu.linear_acceleration_covariance[0] = -1;
+  imu.angular_velocity_covariance[0] = -1;
+  tf::Quaternion orientation;
+  orientation.setRPY(0, 0, radian);
+  imu_east_heading_.orientation.x = orientation[0];
+  imu_east_heading_.orientation.y = orientation[1];
+  imu_east_heading_.orientation.z = orientation[2];
+  imu_east_heading_.orientation.w = orientation[3];
+  imu_east_heading_.orientation_covariance[0] = 1000.0;
+  imu_east_heading_.orientation_covariance[4] = 1000.0;
+  imu_east_heading_.orientation_covariance[8] = 1000.0;
+  return imu;
+
+}
+
 void HpPosRecProduct::callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED9 &m) {
   if (enabled["nav_relposned"]) {
     static ros::Publisher publisher =
@@ -1797,33 +1819,48 @@ void HpPosRecProduct::callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED9 &m) {
   }
 
   if (enabled["nav_heading"]) {
-    static ros::Publisher imu_pub =
-	      nh->advertise<sensor_msgs::Imu>("navheading", kROSQueueSize);
-
-    imu_.header.stamp = ros::Time::now();
-    imu_.header.frame_id = frame_id;
-
-    imu_.linear_acceleration_covariance[0] = -1;
-    imu_.angular_velocity_covariance[0] = -1;
-
+    
+    static ros::Publisher east_imu_pub =
+	      nh->advertise<sensor_msgs::Imu>("heading/east/imu", kROSQueueSize);
+    static ros::Publisher east_degree_publisher=
+        nh->advertise<std_msgs::Float64>("heading/east/degree", kROSQueueSize);
+    static ros::Publisher east_radian_publisher=
+        nh->advertise<std_msgs::Float64>("heading/east/radian", kROSQueueSize);
+    
+    static ros::Publisher north_imu_pub =
+	      nh->advertise<sensor_msgs::Imu>("heading/north/imu", kROSQueueSize);
+    static ros::Publisher north_degree_publisher=
+        nh->advertise<std_msgs::Float64>("heading/north/degree", kROSQueueSize);
+    static ros::Publisher north_radian_publisher=
+        nh->advertise<std_msgs::Float64>("heading/north/radian", kROSQueueSize);
+    std_msgs::Float64 north_degree, east_degree;
+    std_msgs::Float64 north_radian, east_radian;
     // Transform angle since ublox is representing heading as NED but ROS uses ENU as convention (REP-103).
-    double heading = M_PI_2 - (static_cast<double>(m.relPosHeading) * 1e-5 / 180.0 * M_PI);
-    tf::Quaternion orientation;
-    orientation.setRPY(0, 0, heading);
-    imu_.orientation.x = orientation[0];
-    imu_.orientation.y = orientation[1];
-    imu_.orientation.z = orientation[2];
-    imu_.orientation.w = orientation[3];
-    imu_.orientation_covariance[0] = 1000.0;
-    imu_.orientation_covariance[4] = 1000.0;
-    imu_.orientation_covariance[8] = 1000.0;
-    // When heading is reported to be valid, use accuracy reported in 1e-5 deg units
+    north_degree.data = static_cast<double>(m.relPosHeading) * 1e-5;
+    east_degree.data = 90-north_degree.data;
+    north_radian.data = north_degree.data / 180.0 * M_PI;
+    east_radian.data = east_degree.data / 180.0 * M_PI;
+    imu_north_heading_ = getImuMsgFromRadian(north_radian.data);
+    imu_east_heading_ = getImuMsgFromRadian(east_degree.data);
+    
+    /*
+    You should check that if you use the REL_POS mask in the flag, it should be active. 
+    The bit of this mask is 8 (256 in decimal). If it is set, it is published, otherwise it is not.
+    */
     if (m.flags & ublox_msgs::NavRELPOSNED9::FLAGS_REL_POS_HEAD_VALID)
     {
-      imu_.orientation_covariance[8] = pow(m.accHeading * 1e-5 / 180.0 * M_PI, 2);
+      // When heading is reported to be valid, use accuracy reported in 1e-5 deg units
+      imu_north_heading_.orientation_covariance[8] = pow(m.accHeading * 1e-5 / 180.0 * M_PI, 2);
+      imu_east_heading_.orientation_covariance[8] = pow(m.accHeading * 1e-5 / 180.0 * M_PI, 2);
+      east_imu_pub.publish(imu_east_heading_);
+      east_degree_publisher.publish(east_degree);
+      east_radian_publisher.publish(east_radian);
+      north_imu_pub.publish(imu_north_heading_);
+      north_degree_publisher.publish(north_degree);
+      north_radian_publisher.publish(north_radian);
+      imu_ = imu_east_heading_;
     }
-
-    imu_pub.publish(imu_);
+    
   }
 
   last_rel_pos_ = m;
