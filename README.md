@@ -1,5 +1,5 @@
 # ublox
-The `ublox` package provides support for [u-blox](http://www.u-blox.com) GPS receivers. Only the _serial_ configuration of the driver is documented here, but TCP communication is also supported by the driver (untested).
+The `ublox` package provides support for [u-blox](http://www.u-blox.com) GPS receivers. Only the _serial_ configuration of the driver is documented here, but TCP/UDP communication is also supported by the driver (untested).
 
 The driver was originally written by Johannes Meyer. Changes made later are detailed in the version history below.
 
@@ -167,6 +167,7 @@ To publish a given u-blox message to a ROS topic, set the parameter shown below 
 * `publish/mon/hw`: Topic `~monhw`
 
 ### NAV messages
+* NAV messages are time stamped with `iTOW`, and multiple messages can be synchronized with [ublox_msg_filters](ublox_msg_filters)
 * `publish/nav/all`: This is the default value for the `publish/mon/<message>` parameters below. It defaults to `publish/all`. Individual messages can be enabled or disabled by setting the parameters below.
 * `publish/nav/att`: Topic `~navatt`. **ADR/UDR devices only**
 * `publish/nav/clock`: Topic `~navclock`
@@ -174,6 +175,7 @@ To publish a given u-blox message to a ROS topic, set the parameter shown below 
 * `publish/nav/posllh`: Topic `~navposllh`. **Firmware <= 6 only.** For firmware 7 and above, see NavPVT
 * `publish/nav/pvt`: Topic `~navpvt`. **Firmware >= 7 only.**
 * `publish/nav/relposned`: Topic `~navrelposned`. **HPG Rover devices only**
+* `publish/nav/heading`: Topic `~navheading`. **HP Position receiver devices only.** For firmware 9 and above
 * `publish/nav/sat`: Topic `~navsat`
 * `publish/nav/sol`: Topic `~navsol`. **Firmware <= 6 only.** For firmware 7 and above, see NavPVT
 * `publish/nav/status`: Topic `~navstatus`
@@ -183,6 +185,7 @@ To publish a given u-blox message to a ROS topic, set the parameter shown below 
 
 ### ESF messages
 * `publish/esf/all`: This is the default value for the `publish/esf/<message>` parameters below. It defaults to `publish/all` for **ADR/UDR devices**. Individual messages can be enabled or disabled by setting the parameters below.
+* `publish/esf/alg`: Topic `~esfalg`
 * `publish/esf/ins`: Topic `~esfins`
 * `publish/esf/meas`: Topic `~esfmeas`
 * `publish/esf/raw`: Topic `~esfraw`
@@ -201,6 +204,9 @@ The two topics to which you should subscribe are `~fix` and `~fix_velocity`. The
 
 # Version history
 
+* **1.1.4**:
+  - Added messages for firmware 9: `NavRELPOSNED9`.
+  - Added option to publish `sensor_msgs/Imu` message for High Precision Position Receiver devices with firmware version >= 9 for moving base applications (For example ZED-F9P; [UBX-19009093 AppNote](https://www.u-blox.com/sites/default/files/ZED-F9P-MovingBase_AppNote_%28UBX-19009093%29.pdf)).
 * **1.1.3**:
   - Update by TUC-ProAut
   - Added raw data stream output. To publish ros messages set rosparam `raw_data_stream/publish` to true. To store to a logfile set rosparam `set raw_data_stream/dir` to the appropriated directory. This feature has nothing todo with Raw Data Products.
